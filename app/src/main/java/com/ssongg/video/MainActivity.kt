@@ -8,11 +8,13 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.webkit.* // 导入WebKit核心类
+import android.webkit.SslErrorHandler
+import android.webkit.SslError
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Build
 import android.view.ViewGroup
-import android.webkit.SslErrorHandler // 显式导入SslError类
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -54,10 +56,9 @@ class MainActivity : AppCompatActivity() {
                 view.loadUrl(request.url.toString())
                 return true
             }
-
-            // 显式处理SslError（确保参数类型正确）
-            fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslErrorHandler) {
-                handler.proceed() // 忽略SSL错误，谨慎使用
+            // 处理SSL错误（可选）
+            override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
+                handler.proceed()
             }
         }
     }
