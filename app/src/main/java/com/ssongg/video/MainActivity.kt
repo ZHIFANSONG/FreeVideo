@@ -1,27 +1,18 @@
 package com.ssongg.video
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.app.AlertDialog
-import android.content.Intent
-import android.content.pm.ActivityInfo
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.provider.Settings.Global
 import android.view.View
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.WindowInsetsCompat
+import android.content.pm.ActivityInfo
+import android.view.WindowManager
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -30,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     private var originalOrientation: Int = 0
     private val url = "https://video.ssongg.cn" // 你的网站URL
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -47,15 +39,24 @@ class MainActivity : AppCompatActivity() {
             domStorageEnabled = true
             useWideViewPort = true
             loadWithOverviewMode = true
-            mediaPlaybackRequiresUserGesture = true // 允许自动播放
+            mediaPlaybackRequiresUserGesture = false // 允许自动播放
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            allowFileAccess = true
+            builtInZoomControls = true
+            displayZoomControls = false
         }
 
         // 处理URL加载
         webView.webViewClient = object : WebViewClient() {
+            @SuppressLint("WebViewClientOnReceivedSslError")
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 view.loadUrl(request.url.toString())
                 return true
+            }
+
+            // 处理SSL错误（可选）
+            override fun onReceivedSslError(view: WebView, handler: android.webkit.SslErrorHandler, error: android.net.http.SslError) {
+                handler.proceed() // 忽略SSL证书错误，谨慎使用
             }
         }
     }
@@ -72,7 +73,7 @@ class MainActivity : AppCompatActivity() {
 
                 originalOrientation = requestedOrientation
                 customView = view
-                customViewCallback = callback
+                customViewCallback = callback // 修复赋值
 
                 // 设置全屏和横屏
                 window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
@@ -102,6 +103,13 @@ class MainActivity : AppCompatActivity() {
                 customViewCallback?.onCustomViewHidden()
                 customViewCallback = null
             }
+
+            // 可选：处理JavaScript警告
+            override fun onJsAlert(view: WebView, url: String, message: String, result: android.webkit.JsResult): Boolean {
+                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+                result.confirm()
+                return true
+            }
         }
     }
 
@@ -124,5 +132,15 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         webView.destroy()
     }
-}
 
+    // 暂停/恢复WebView
+    override fun onPause() {
+        super.onPause()
+        webView.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        webView.onResume()
+    }
+}
