@@ -88,11 +88,6 @@ class MainActivity : AppCompatActivity() {
             cacheMode = android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK
             mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-        } else {
-            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-        }
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
                 view: WebView,
