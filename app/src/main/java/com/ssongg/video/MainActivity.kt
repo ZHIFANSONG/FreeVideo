@@ -41,6 +41,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissions() {
         checkStoragePermission()
+        // 检查其他可能需要的权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&!Settings.canDrawOverlays(this)) {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST_CODE)
+        }
     }
 
     private fun checkStoragePermission() {
@@ -57,6 +62,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == OVERLAY_PERMISSION_REQUEST_CODE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
+                // 权限已授予
+            } else {
+                showToast("悬浮窗权限被拒绝")
+            }
+        }
+    }
     private fun initWebView() {
         webView = findViewById(R.id.webview)
         setupWebViewSettings()
@@ -72,6 +87,11 @@ class MainActivity : AppCompatActivity() {
             loadWithOverviewMode = true
             cacheMode = android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK
             mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        } else {
+            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
         }
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
@@ -109,6 +129,7 @@ class MainActivity : AppCompatActivity() {
                 customViewCallback = callback
                 setFullscreen(true)
                 // 移除 callback.onCustomViewHidden() 调用
+                // callback.onCustomViewHidden()
             }
 
             override fun onHideCustomView() {
@@ -119,10 +140,10 @@ class MainActivity : AppCompatActivity() {
                 customView?.visibility = View.GONE
                 customView = null
                 customViewCallback?.onCustomViewHidden()
+                customViewCallback = null
             }
         }
     }
-
     private fun setFullscreen(isFullscreen: Boolean) {
         this.isFullscreen = isFullscreen
         WindowInsetsControllerCompat(window, window.decorView).apply {
@@ -134,14 +155,7 @@ class MainActivity : AppCompatActivity() {
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
             }
         }
-        // 更新 Activity 的 screenOrientation 属性
-        if (isFullscreen) {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        } else {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-        }
     }
-
     private fun loadUrl() {
         webView.loadUrl(currentUrl)
     }
@@ -212,4 +226,5 @@ class MainActivity : AppCompatActivity() {
     private fun showToast(message: String) {
         android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
     }
+
 }
