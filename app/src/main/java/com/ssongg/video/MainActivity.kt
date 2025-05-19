@@ -1,8 +1,11 @@
 package com.ssongg.video
 
 import android.annotation.SuppressLint
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -103,6 +106,7 @@ class MainActivity : AppCompatActivity() {
     // 返回键处理：优先返回WebView历史，否则退出Activity
     // MainActivity.kt
     override fun onBackPressed() {
+        val fullscreenView = null
         if (fullscreenView != null) { // 先处理全屏退出
             webView.webChromeClient?.onHideCustomView()
             return
