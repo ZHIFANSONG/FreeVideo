@@ -10,9 +10,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
-import android.content.pm.ActivityInfo
-import android.view.WindowManager
-import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -73,7 +70,7 @@ class MainActivity : AppCompatActivity() {
 
                 originalOrientation = requestedOrientation
                 customView = view
-                customViewCallback = callback // 修复赋值
+                customViewCallback = callback
 
                 // 设置全屏和横屏
                 window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
@@ -102,13 +99,6 @@ class MainActivity : AppCompatActivity() {
                 customView = null
                 customViewCallback?.onCustomViewHidden()
                 customViewCallback = null
-            }
-
-            // 可选：处理JavaScript警告
-            override fun onJsAlert(view: WebView, url: String, message: String, result: android.webkit.JsResult): Boolean {
-                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
-                result.confirm()
-                return true
             }
         }
     }
