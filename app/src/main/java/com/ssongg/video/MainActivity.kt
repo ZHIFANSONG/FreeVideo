@@ -14,6 +14,7 @@ import android.provider.Settings
 import android.provider.Settings.Global
 import android.view.View
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
@@ -23,196 +24,105 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
-    private val PERMISSION_REQUEST_CODE = 100
-    private val OVERLAY_PERMISSION_REQUEST_CODE = 200
     private lateinit var webView: WebView
-    private var currentUrl = "https://video.ssongg.cn"
-    private var isFullscreen = false
+    private var customView: View? = null
+    private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+    private var originalOrientation: Int = 0
+    private val url = "https://video.ssongg.cn" // 你的网站URL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        initWebView()
-        restoreState(savedInstanceState)
-        loadUrl()
-    }
-
-    private fun checkStoragePermission() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                PERMISSION_REQUEST_CODE
-            )
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == OVERLAY_PERMISSION_REQUEST_CODE) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                // 权限已授予
-            } else {
-                showToast("悬浮窗权限被拒绝")
-            }
-        }
-    }
-    private fun initWebView() {
+        // 初始化WebView
         webView = findViewById(R.id.webview)
-        setupWebViewSettings()
+        setupWebView()
         setupWebChromeClient()
+        webView.loadUrl(url)
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun setupWebViewSettings() {
+    private fun setupWebView() {
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             useWideViewPort = true
             loadWithOverviewMode = true
-            cacheMode = android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK
-            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-        }
-        webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(
-                view: WebView,
-                request: android.webkit.WebResourceRequest
-            ): Boolean {
-                val url = request.url.toString()
-                // 排除需要跳转浏览器的情况（如电话、邮件）
-                if (url.startsWith("tel:") || url.startsWith("mailto:")) {
-                    return false
-                }
-                view.loadUrl(url) // 强制在 WebView 内加载
-                return true
-            }
+            mediaPlaybackRequiresUserGesture = true // 允许自动播放
+            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
-        // 启用硬件加速
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-        } else {
-            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+        // 处理URL加载
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                view.loadUrl(request.url.toString())
+                return true
+            }
         }
     }
 
     private fun setupWebChromeClient() {
         webView.webChromeClient = object : WebChromeClient() {
-            private var customView: View? = null
-            private var originalSystemUiVisibility: Int = 0
-
-            // 处理全屏显示（仅保留必要逻辑）
+            // 处理全屏显示
             override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                super.onShowCustomView(view, callback)
+                if (customView != null) {
+                    callback.onCustomViewHidden()
+                    return
+                }
+
+                originalOrientation = requestedOrientation
                 customView = view
-                originalSystemUiVisibility = window.decorView.systemUiVisibility
-                window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LOW_PROFILE
-                        or View.SYSTEM_UI_FLAG_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
-                callback.onCustomViewAttached(view)
+                customViewCallback = callback
+
+                // 设置全屏和横屏
+                window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+                // 将自定义视图添加到Activity
+                val decor = window.decorView as FrameLayout
+                decor.addView(customView, FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                ))
             }
 
             // 处理全屏退出
             override fun onHideCustomView() {
-                customView?.let {
-                    it.visibility = View.GONE
-                    customViewCallback?.onCustomViewHidden()
-                    customView = null
-                    window.decorView.systemUiVisibility = originalSystemUiVisibility
-                }
-            }
-        }
-    }
-    private fun setFullscreen(isFullscreen: Boolean) {
-        this.isFullscreen = isFullscreen
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            if (isFullscreen) {
-                hide(WindowInsetsCompat.Type.systemBars())
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            } else {
-                show(WindowInsetsCompat.Type.systemBars())
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-            }
-        }
-    }
-    private fun loadUrl() {
-        webView.loadUrl(currentUrl)
-    }
+                super.onHideCustomView()
+                if (customView == null) return
 
-    private fun restoreState(savedInstanceState: Bundle?) {
-        savedInstanceState?.let {
-            currentUrl = it.getString("SAVED_URL") ?: currentUrl
-        }
-    }
+                // 恢复原始设置
+                window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                requestedOrientation = originalOrientation
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString("SAVED_URL", webView.url.toString())
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                webView.reload()
-            } else {
-                showToast("存储权限被拒绝")
+                // 移除自定义视图
+                val decor = window.decorView as FrameLayout
+                decor.removeView(customView)
+                customView = null
+                customViewCallback?.onCustomViewHidden()
+                customViewCallback = null
             }
         }
     }
 
-
+    // 返回键处理：优先返回WebView历史，否则退出Activity
     override fun onBackPressed() {
-        if (webView.canGoBack()) { // 检查 WebView 是否有历史记录
-            webView.goBack() // 返回上一级网页
+        if (customView != null) {
+            // 如果处于全屏状态，先退出全屏
+            webView.webChromeClient?.onHideCustomView()
+        } else if (webView.canGoBack()) {
+            // 如果WebView有历史记录，返回上一页
+            webView.goBack()
         } else {
-            super.onBackPressed() // 无历史记录时退出 App
+            // 否则退出Activity
+            super.onBackPressed()
         }
     }
-    private fun showPermissionGuide() {
-        AlertDialog.Builder(this)
-            .setTitle("需要悬浮窗权限")
-            .setMessage("请前往设置开启「显示在其他应用上层」权限")
-            .setPositiveButton("去设置") { _, _ ->
-                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-                intent.data = Uri.parse("package:$packageName")
-                startActivity(intent)
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
 
-    private fun enterFullscreen() {
-        window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                )
-
-        // 关键修复：禁用传感器方向检测
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    // 确保Activity销毁时释放资源
+    override fun onDestroy() {
+        super.onDestroy()
+        webView.destroy()
     }
-    private fun exitFullscreen() {
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    }
-    
-
-    private fun showToast(message: String) {
-        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
-    }
-
 }
 
-private fun WebChromeClient.CustomViewCallback.onCustomViewAttached(view: View) {}
