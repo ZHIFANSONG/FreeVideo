@@ -7,12 +7,12 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
-import android.webkit.*
+import android.webkit.* // 导入WebKit核心类
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
-import android.os.Build // 新增导入
-import android.view.ViewGroup // 新增导入
-import android.webkit.SslError
+import android.os.Build
+import android.view.ViewGroup
+import android.webkit.SslErrorHandler // 显式导入SslError类
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
             displayZoomControls = false
         }
 
-        // 处理URL加载
+        // 处理URL加载和SSL错误
         webView.webViewClient = object : WebViewClient() {
             @SuppressLint("WebViewClientOnReceivedSslError")
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -55,8 +55,8 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
 
-            // 处理SSL错误（可选）
-            override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) { // 修正：导入SslError
+            // 显式处理SslError（确保参数类型正确）
+            fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslErrorHandler) {
                 handler.proceed() // 忽略SSL错误，谨慎使用
             }
         }
@@ -81,11 +81,11 @@ class MainActivity : AppCompatActivity() {
                 // 强制设置为横屏
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
-                // 将全屏视图添加到窗口
+                // 将全屏视图添加到窗口（使用ViewGroup.LayoutParams）
                 val decorView = window.decorView as FrameLayout
                 decorView.addView(view, FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, // 修正：导入ViewGroup
-                    ViewGroup.LayoutParams.MATCH_PARENT  // 修正：导入ViewGroup
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
                 ))
             }
 
@@ -107,7 +107,7 @@ class MainActivity : AppCompatActivity() {
                 decorView.removeView(customView)
             }
 
-            // 可选：处理JavaScript对话框
+            // 处理JavaScript对话框（可选）
             override fun onJsAlert(view: WebView, url: String, message: String, result: JsResult): Boolean {
                 result.confirm()
                 return true
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
     // 沉浸式全屏模式（适配不同API版本）
     @SuppressLint("ObsoleteSdkInt")
     private fun enableImmersiveMode() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // 修正：导入Build
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.let { controller ->
                 controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
                 controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -136,7 +136,7 @@ class MainActivity : AppCompatActivity() {
     // 退出沉浸式模式
     @SuppressLint("ObsoleteSdkInt")
     private fun disableImmersiveMode() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // 修正：导入Build
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
         } else {
             @Suppress("DEPRECATION")
