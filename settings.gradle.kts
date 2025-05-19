@@ -7,8 +7,8 @@ pluginManagement {
     resolutionStrategy {
         eachPlugin {
             when (requested.id.id) {
-                "com.android.application" -> useVersion("8.1.1")
-                "org.jetbrains.kotlin.android" -> useVersion("1.9.20")
+                "com.android.application" -> useVersion("8.10.0")
+                "org.jetbrains.kotlin.android" -> useVersion("2.1.20")
             }
         }
     }
