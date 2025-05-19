@@ -33,19 +33,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        checkPermissions()
         initWebView()
         restoreState(savedInstanceState)
         loadUrl()
-    }
-
-    private fun checkPermissions() {
-        checkStoragePermission()
-        // 检查其他可能需要的权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&!Settings.canDrawOverlays(this)) {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST_CODE)
-        }
     }
 
     private fun checkStoragePermission() {
@@ -114,28 +104,29 @@ class MainActivity : AppCompatActivity() {
     private fun setupWebChromeClient() {
         webView.webChromeClient = object : WebChromeClient() {
             private var customView: View? = null
-            private var customViewCallback: CustomViewCallback? = null
+            private var originalSystemUiVisibility: Int = 0
 
+            // 处理全屏显示（仅保留必要逻辑）
             override fun onShowCustomView(view: View, callback: CustomViewCallback) {
-                super.onShowCustomView(view, callback)
-                if (isFullscreen) return
-
                 customView = view
-                customViewCallback = callback
-                setFullscreen(true)
-                // 移除 callback.onCustomViewHidden() 调用
-                // callback.onCustomViewHidden()
+                originalSystemUiVisibility = window.decorView.systemUiVisibility
+                window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LOW_PROFILE
+                        or View.SYSTEM_UI_FLAG_FULLSCREEN
+                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                callback.onCustomViewAttached(view)
             }
 
+            // 处理全屏退出
             override fun onHideCustomView() {
-                super.onHideCustomView()
-                if (!isFullscreen) return
-
-                setFullscreen(false)
-                customView?.visibility = View.GONE
-                customView = null
-                customViewCallback?.onCustomViewHidden()
-                customViewCallback = null
+                customView?.let {
+                    it.visibility = View.GONE
+                    customViewCallback?.onCustomViewHidden()
+                    customView = null
+                    window.decorView.systemUiVisibility = originalSystemUiVisibility
+                }
             }
         }
     }
@@ -183,10 +174,10 @@ class MainActivity : AppCompatActivity() {
 
 
     override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
+        if (webView.canGoBack()) { // 检查 WebView 是否有历史记录
+            webView.goBack() // 返回上一级网页
         } else {
-            super.onBackPressed()
+            super.onBackPressed() // 无历史记录时退出 App
         }
     }
     private fun showPermissionGuide() {
@@ -223,3 +214,5 @@ class MainActivity : AppCompatActivity() {
     }
 
 }
+
+private fun WebChromeClient.CustomViewCallback.onCustomViewAttached(view: View) {}
