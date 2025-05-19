@@ -1,21 +1,19 @@
+// app/build.gradle.kts
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("androidx.compose.ui.tooling.preview") // Compose 预览插件
+    id("com.android.application") // Android应用插件
+    id("org.jetbrains.kotlin.android") // Kotlin插件
 }
 
 android {
-    namespace = "com.ssongg.video"
-    compileSdk = 36
+    namespace = "com.ssongg.video" // 替换为你的包名
+    compileSdk = 34 // 建议使用最新SDK（如34）
 
     defaultConfig {
-        applicationId = "com.ssongg.video"
-        minSdk = 33
-        targetSdk = 36
-        versionCode = 3
-        versionName = "1.3"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        applicationId = "com.ssongg.video" // 应用ID
+        minSdk = 26 // 最低兼容版本
+        targetSdk = 34 // 目标版本
+        versionCode = 1
+        versionName = "1.0"
     }
 
     buildTypes {
@@ -28,48 +26,27 @@ android {
         }
     }
 
+    // 配置Java/Kotlin编译选项
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
-
     kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs = listOf(
-            "-Xjsr305=strict",
-            "-opt-in=kotlin.RequiresOptIn"
-        )
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3" // 与 buildscript 中的版本一致
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+        jvmTarget = "1.8"
     }
 }
 
 dependencies {
-    // 基础依赖
-    implementation("androidx.core:core-ktx:1.16.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.11.0")
+    // 核心依赖
+    implementation "androidx.core:core-ktx:1.12.0"
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "com.google.android.material:material:1.10.0"
 
-    // WebView 相关
-    implementation("androidx.webkit:webkit:1.8.0")
-
-    // Compose 依赖（如果确实需要）
-    implementation("androidx.compose.ui:ui:1.5.3")
-    implementation("androidx.compose.ui:ui-graphics:1.5.3")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.5.3")
-    implementation("androidx.compose.material:material:1.5.3")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.5.3")
+    // WebView依赖
+    implementation "androidx.webkit:webkit:1.8.0" // 支持现代WebView功能
 
     // 测试依赖
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    testImplementation "junit:junit:4.13.2"
+    androidTestImplementation "androidx.test.ext:junit:1.1.5"
+    androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
 }

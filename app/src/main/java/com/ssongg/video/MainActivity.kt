@@ -58,61 +58,59 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // MainActivity.kt
     private fun setupWebChromeClient() {
         webView.webChromeClient = object : WebChromeClient() {
-            // 处理全屏显示
+            private var fullscreenView: View? = null
+            private var fullscreenCallback: CustomViewCallback? = null
+
+            // 处理全屏请求
             override fun onShowCustomView(view: View, callback: CustomViewCallback) {
-                super.onShowCustomView(view, callback)
-                if (customView != null) {
+                if (fullscreenView != null) {
                     callback.onCustomViewHidden()
                     return
                 }
 
-                originalOrientation = requestedOrientation
-                customView = view
-                customViewCallback = callback
+                fullscreenView = view
+                fullscreenCallback = callback
 
-                // 设置全屏和横屏
+                // 隐藏系统栏，设置横屏
                 window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
-                // 将自定义视图添加到Activity
-                val decor = window.decorView as FrameLayout
-                decor.addView(customView, FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                ))
+                // 将全屏视图添加到窗口
+                val decorView = window.decorView as FrameLayout
+                decorView.addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             }
 
-            // 处理全屏退出
+            // 退出全屏
             override fun onHideCustomView() {
-                super.onHideCustomView()
-                if (customView == null) return
+                fullscreenView?.let {
+                    val decorView = window.decorView as FrameLayout
+                    decorView.removeView(it)
+                    fullscreenView = null
+                    fullscreenCallback?.onCustomViewHidden()
+                    fullscreenCallback = null
 
-                // 恢复原始设置
-                window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                requestedOrientation = originalOrientation
-
-                // 移除自定义视图
-                val decor = window.decorView as FrameLayout
-                decor.removeView(customView)
-                customView = null
-                customViewCallback?.onCustomViewHidden()
-                customViewCallback = null
+                    // 恢复竖屏和系统栏
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                }
             }
         }
     }
 
     // 返回键处理：优先返回WebView历史，否则退出Activity
+    // MainActivity.kt
     override fun onBackPressed() {
-        if (customView != null) {
-            // 如果处于全屏状态，先退出全屏
+        if (fullscreenView != null) { // 先处理全屏退出
             webView.webChromeClient?.onHideCustomView()
-        } else if (webView.canGoBack()) {
-            // 如果WebView有历史记录，返回上一页
+            return
+        }
+
+        if (webView.canGoBack()) { // 返回 WebView 历史
             webView.goBack()
-        } else {
-            // 否则退出Activity
+        } else { // 退出应用
             super.onBackPressed()
         }
     }

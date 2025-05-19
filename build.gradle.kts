@@ -1,20 +1,10 @@
+// build.gradle.kts（项目根目录）
 buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath("com.android.tools.build:gradle:8.4.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
-        classpath("androidx.compose.compiler:compiler:1.5.3") // Compose 编译器插件
-    }
+    // 不需要手动声明仓库，已在settings.gradle.kts中配置
 }
 
 allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
+    // 清空，不添加任何仓库配置
 }
 
 tasks.register("clean", Delete::class) {
