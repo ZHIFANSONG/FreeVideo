@@ -17,8 +17,7 @@
         android:taskAffinity=""
         android:excludeFromRecents="false"
         android:usesCleartextTraffic="true"
-        android:networkSecurityConfig="@xml/network_security_config"
-        android:attributionTag="your_attribution_tag"> <!-- 添加 attributionTag 声明 -->
+        android:networkSecurityConfig="@xml/network_security_config">
 
         <!-- 主 Activity -->
         <activity

@@ -7,12 +7,12 @@ plugins {
 android {
     signingConfigs{}
     namespace = "com.ssongg.video"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ssongg.video"
         minSdk = 33
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 3
         versionName = "1.3"
 
