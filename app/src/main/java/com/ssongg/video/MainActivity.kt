@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity() {
                 customView = view
                 customViewCallback = callback
                 setFullscreen(true)
-                callback.onCustomViewHidden()
+                // 移除 callback.onCustomViewHidden() 调用
             }
 
             override fun onHideCustomView() {
@@ -133,6 +133,12 @@ class MainActivity : AppCompatActivity() {
                 show(WindowInsetsCompat.Type.systemBars())
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
             }
+        }
+        // 更新 Activity 的 screenOrientation 属性
+        if (isFullscreen) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         }
     }
 
